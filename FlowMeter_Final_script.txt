@@ -1,27 +1,40 @@
 >D
 ; define and initialize all vars here (p means permanent)
 ; total number of counted pulses
-p:total=0
+p:TotalPulses=0
 ; Total number of measured liters (in liter)
-p:liter=0
-; Pulses per liter "High flow"
-p:highflow=0
-; Pulses per liter "Medium flow"
-p:midflow=420
-; Pulses per liter "Low flow"
-p:lowflow=390
-; Threshold counter for "High flow" (in pulses per second)
-p:highflowTC=150
-; Threshold counter for "Medium flow" (in pulses per second)
-p:midflowTC=80
-; Threshold counter for "Low flow" (in pulses per second)
-p:lowflowTC=30
+p:TotalLiter=0
+
+; Pulses per liter in Flowspeed 1
+p:FlowSpeed1=150
+; Pulses per liter in Flowspeed 2
+p:FlowSpeed2=183
+; Pulses per liter in Flowspeed 3
+p:FlowSpeed3=420
+; Pulses per liter in Flowspeed 4
+p:FlowSpeed4=275
+; Pulses per liter in Flowspeed 5
+p:FlowSpeed5=350
+; Pulses per liter in Flowspeed 6
+p:FlowSpeed6=375
+
+; Threshold counter for Flow Speed 1 (in pulses per second)
+p:FlowSpeed1TC=2
+; Threshold counter for Flow Speed 2 (in pulses per second)
+p:FlowSpeed2TC=5
+; Threshold counter for Flow Speed 3 (in pulses per second)
+p:FlowSpeed3TC=10
+; Threshold counter for Flow Speed 4 (in pulses per second)
+p:FlowSpeed4TC=25
+; Threshold counter for Flow Speed 5 (in pulses per second)
+p:FlowSpeed5TC=75
+
 ; Reset button variable
 resetb=0
-; Pulse rate (difference in number of pulse counts between current and previous timer period) in Pulse/sec
-delta=0
+; Number of pulses in timer period (in Pulse/sec)
+PulseRate=0
 ; Flow rate in current timer period (in Liter/min)
-flow=0
+FlowRate=0
 ; Amount of water flown through in current timer period (in liter)
 tmp=0
 ; Current water flow in current timer period (high, medium or low)
@@ -30,7 +43,7 @@ cflow="none"
 >B
 ; executed on BOOT time before sensors are initialized and on save script 
 ; after boot, set "total" back to latest state of pulse counter 1 (pc[1]) 
-total=pc[1]
+TotalPulses=pc[1]
 ; after boot, set timer 1 (ts1) to 1000 ms
 ts1(1000)
 
@@ -42,88 +55,127 @@ then
 ; reset button variable resetb is set back to 0
 resetb=0
 ; total number of counted pulses is set back to 0
-total=0
+TotalPulses=0
 ; total number of counted liters is set back to 0
-liter=0
+TotalLiter=0
 ; counter1 is set back to 0
 =>Counter1 0 
 endif
 
 ; number of pulses in current timer period is "pulse counter 1" (pc[1]) minus current total
-delta=pc[1]-total
+PulseRate=pc[1]-TotalPulses
 ; afterwards, total is set to current "pulse counter 1" (pc[1])
-total=pc[1]
+TotalPulses=pc[1]
 
-; if # of pulses in timer period of timer 1 (delta) greater than threshold counter for high flow (highflowTC)
-if delta>highflowTC 
+; if # of pulses in timer period of timer 1 (PulseRate) greater than threshold counter for high flow (highflowTC)
+if PulseRate>FlowSpeed5TC
 then
-; set current flow variable (cflow) to "high"...
-cflow="high"
-; ... and calculate the current water flow (in liter) by dividing the "number of pulse counts" (delta) by "pulses per liter for High Flow" (highflow)
-tmp=(delta/highflow)
+; set current flow variable (cflow, string for text output) to the respective flow spee
+cflow="Flow speed 6"
+; ... and calculate the current water flow (in liter) by dividing the "number of pulse counts" (PulseRate) by "pulses per liter for High Flow" (highflow)
+tmp=(PulseRate/FlowSpeed6)
 endif
 
-; if # of pulses in period of timer 1 (delta) between threshold counter for high flow (highflowTC) and threshold counter for medium flow (mediumflowTC)
-if delta>midflowTC
-and delta<highflowTC
+; if # of pulses in the period of timer 1 ("PulseRate") is between the two thresholds
+if PulseRate<FlowSpeed5TC
+and PulseRate>FlowSpeed4TC
 then
-; set current flow variable (cflow) to "mid"...
-cflow="mid"
-; ... and calculate the current water flow (in liter) by dividing the "number of pulse counts" (delta) by "pulses per liter for Mid Flow" (midflow)
-tmp=(delta/midflow)
+; set current flow variable (cflow, string for text output) to the respective flow speed
+cflow="Flow speed 5"
+; calculate the current water flow (in liter) by dividing the "number of pulse counts" (PulseRate) by the respective flow speed
+tmp=(PulseRate/FlowSpeed5)
 endif
 
-; if # of pulses in period of timer 1 (delta) smaller than threshold counter for low flow (lowflowTC)
-if delta<midflowTC
+; if # of pulses in the period of timer 1 ("PulseRate") is between the two thresholds
+if PulseRate<FlowSpeed4TC
+and PulseRate>FlowSpeed3TC
 then
-; set current flow variable (cflow) to "llow"...
-cflow="low"
-; ... and calculate the current water flow (in liter) by dividing the "number of pulse counts" (delta) by "pulses per liter for Low Flow" (lowflow)
-tmp=(delta/lowflow)
+; set current flow variable (cflow, string for text output) to the respective flow speed
+cflow="Flow speed 4"
+; calculate the current water flow (in liter) by dividing the "number of pulse counts" (PulseRate) by the respective flow speed
+tmp=(PulseRate/FlowSpeed4)
+endif
+
+; if # of pulses in the period of timer 1 ("PulseRate") is between the two thresholds
+if PulseRate<FlowSpeed3TC
+and PulseRate>FlowSpeed2TC
+then
+; set current flow variable (cflow, string for text output) to the respective flow speed
+cflow="Flow speed 3"
+; calculate the current water flow (in liter) by dividing the "number of pulse counts" (delta) by the respective flow speed
+tmp=(PulseRate/FlowSpeed3)
+endif
+
+; if # of pulses in the period of timer 1 ("PulseRate") is between the two thresholds
+if PulseRate<FlowSpeed2TC
+and PulseRate>FlowSpeed1TC
+then
+; set current flow variable (cflow, string for text output) to the respective flow speed
+cflow="Flow speed 2"
+; calculate the current water flow (in liter) by dividing the "number of pulse counts" (PulseRate) by the respective flow speed
+tmp=(PulseRate/FlowSpeed2)
+endif
+
+; if # of pulses in the period of timer 1 ("PulseRate") is between the two thresholds
+if PulseRate<FlowSpeed1TC
+and PulseRate>0
+then
+; set current flow variable (cflow, string for text output) to the respective flow speed
+cflow="Flow speed 1"
+; calculate the current water flow (in liter) by dividing the "number of pulse counts" (PulseRate) by the respective flow speed
+tmp=(PulseRate/FlowSpeed1)
 endif
 
 ; If no pulses have been counted in the timer period...
-if delta==0
+if PulseRate==0
 then
-; Then the current water flow is set to "none"...
+; the current water flow is set to "none"...
 cflow="none"
-; ... and the amount of water flown through in current timer period in liter is set to 0
+; the amount of water flown through in current timer period in liter is set to 0
 tmp=0
 endif
 
 ; the new total amount of water (in liter) is calculated with the previous amount (in liter) plus the new amount in the timer period
-liter=(liter+tmp)
+TotalLiter=(TotalLiter+tmp)
 ; the current flow rate (in Liter/min) is calculated by multiplying the amount of water in the timer period (tmp) * 60 seconds
-flow=tmp*60
-; Print ?!?
-print total:%total% delta:%delta% liter:%liter% flowrate:%flow%
+FlowRate=tmp*60
+; Print summary in the tasmota log
+print Status: Flowrate (in liter/min): %FlowRate%, Total (in liter): %TotalLiter%, Total (in pulses): %TotalPulses%, Pulsesrate (in pulses/sec): %PulseRate% 
 ; save permanent vars ?!?
 svars
 ; ?!?
 ts1(1000)
 ; publish routine
-=>publish stat/%topic%/Flow{"FlowRate":%flow%,"PulseRate":%delta%,"WaterFlow":"%cflow%","Total":%liter%, "Counter": %total% }
+=>publish stat/%topic%/Flow{"FlowRate":%FlowRate%,"TotalLiter":%TotalLiter%,"TotalPulses":%TotalPulses%,"PulseRate":%PulseRate% }
 
 >W
 ; Define the elements that are displayed in the web UI main page.
+
 ; Total number of measured liters (in liter)
-Total{m}%liter% Liter
+Total{m}%TotalLiter% Liter
 ; Flow rate in current timer period (in Liter/min)
-FlowRate{m}%flow% Liter/min
+Flow Rate{m}%FlowRate% Liter/min
 ; Pulse rate in current timer period (in Pulse/sec)
-PulseRate{m}%delta% Pulse/sec
+Pulse Rate{m}%PulseRate% Pulse/sec
 ; Current water flow in current timer period (high, medium or low)
-WaterFlow{m}%cflow% 
+Flow Speed Cluster{m}%cflow% 
 
+; Upper threshold (in pulses per second) for different flowspeed clusters
 ; Number Inputs (min, max, step, variable name, label text, horizontal size)
-nm(0 1000 1 highflow "Pulses per liter High " 80) 
-nm(0 1000 1 midflow "Pulses per liter Mid " 80)  
-nm(0 1000 1 lowflow "Pulses per liter Low " 80 )
+nm(0 400 1 FlowSpeed1TC "Upper threshold for Flowspeed 1 (in Pulse/Sec) " 80)
+nm(0 400 1 FlowSpeed2TC "Upper threshold for Flowspeed 2 (in Pulse/Sec) " 80)
+nm(0 400 1 FlowSpeed3TC "Upper threshold for Flowspeed 3 (in Pulse/Sec) " 80)
+nm(0 400 1 FlowSpeed4TC "Upper threshold for Flowspeed 4 (in Pulse/Sec) " 80)
+nm(0 400 1 FlowSpeed5TC "Upper threshold for Flowspeed 5 (in Pulse/Sec) " 80)
 
+; Flowspeed (in pulses per liter) for different flowspeed clusters
 ; Number Inputs (min, max, step, variable name, label text, horizontal size)
-nm(0 400 1 highflowTC "HighFlow Pulse/Sec " 80) 
-nm(0 400 1 midflowTC "MidFlow Pulse/Sec " 80)  
-nm(0 400 1 lowflowTC "LowFlow Pulse/Sec " 80 )
+nm(0 1000 1 FlowSpeed1 "Flowspeed 1 (in Pulse/liter) " 80)
+nm(0 1000 1 FlowSpeed2 "Flowspeed 2 (in Pulse/liter) " 80)
+nm(0 1000 1 FlowSpeed3 "Flowspeed 3 (in Pulse/liter) " 80)
+nm(0 1000 1 FlowSpeed4 "Flowspeed 4 (in Pulse/liter) " 80)
+nm(0 1000 1 FlowSpeed5 "Flowspeed 5 (in Pulse/liter) " 80)
+nm(0 1000 1 FlowSpeed6 "Flowspeed 6 (in Pulse/liter) " 80)
 
 ; Button (variable name, text of ON state of button, text of OFF state of button)
 bu(resetb "Resetting" "Reset Total")
